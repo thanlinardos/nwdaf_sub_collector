@@ -1,12 +1,12 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dummy;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
@@ -22,7 +22,7 @@ import io.nwdaf.eventsubscription.model.UeMobility;
 import io.nwdaf.eventsubscription.utilities.Constants;
 
 @Component
-public class KafkaDummyDataListener {
+public class KafkaDummyDataListener{
     private static Integer no_kafkaDummyDataListeners = 0;
 	private static final Object kafkaDummyDataLock = new Object();
 	private static Boolean startedSendingData = false;
@@ -30,16 +30,13 @@ public class KafkaDummyDataListener {
 	private static Logger logger = LoggerFactory.getLogger(KafkaDummyDataListener.class);
     private List<NfLoadLevelInformation> nfloadinfos;
     private List<UeMobility> ueMobilities;
-
+    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD,NwdafEventEnum.UE_MOBILITY));
 	@Autowired
 	Environment env;
     
     @Autowired
     KafkaProducer producer;
 
-    @Value(value = "${nnwdaf-eventsubscription.kafka.topic}")
-    String topicName;
-	
     @Autowired
     ObjectMapper objectMapper;
 
@@ -61,7 +58,7 @@ public class KafkaDummyDataListener {
                     nfloadinfos = DummyDataGenerator.changeNfLoadTimeDependentProperties(nfloadinfos);
                     for(int k=0;k<nfloadinfos.size();k++) {
                         try {
-                            producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(k)), Optional.of(topicName));
+                            producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(k)), eType.toString());
                             synchronized(startedSendingDataLock){
                                 startedSendingData = true;
                             }
@@ -77,7 +74,7 @@ public class KafkaDummyDataListener {
                     ueMobilities = DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities);
                     for(int k=0;k<ueMobilities.size();k++) {
                         try {
-                            producer.sendMessage(objectMapper.writeValueAsString(ueMobilities.get(k)), Optional.of(topicName));
+                            producer.sendMessage(objectMapper.writeValueAsString(ueMobilities.get(k)), eType.toString());
                             synchronized(startedSendingDataLock){
                                 startedSendingData = true;
                             }

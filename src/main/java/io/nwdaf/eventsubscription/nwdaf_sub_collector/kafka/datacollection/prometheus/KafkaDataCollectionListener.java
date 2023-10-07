@@ -1,8 +1,8 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.prometheus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +22,13 @@ import io.nwdaf.eventsubscription.model.NwdafEvent.NwdafEventEnum;
 import io.nwdaf.eventsubscription.requestbuilders.PrometheusRequestBuilder;
 
 @Component
-public class KafkaDataCollectionListener {
+public class KafkaDataCollectionListener{
 	private static Integer no_dataCollectionEventListeners = 0;
 	private static final Object dataCollectionLock = new Object();
 	private static Boolean startedSendingData = false;
 	private static final Object startedSendingDataLock = new Object();
 	private static Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
-	
-	@Value(value = "${nnwdaf-eventsubscription.kafka.topic}")
-    String topicName;
-
+	public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD));
 	@Value(value = "${nnwdaf-eventsubscription.prometheus_url}")
 	String prometheusUrl;
 
@@ -52,36 +49,34 @@ public class KafkaDataCollectionListener {
     		for(NwdafEventEnum eType : Constants.supportedEvents) {
 				switch(eType){
 					case NF_LOAD:
-						if(eType.equals(NwdafEventEnum.NF_LOAD)) {
-							List<NfLoadLevelInformation> nfloadinfos=new ArrayList<>();
-							try {
-								long t = System.nanoTime();
-								nfloadinfos = new PrometheusRequestBuilder().execute(eType, prometheusUrl);
-								prom_delay += (System.nanoTime() - t) / 1000000l;
-							} catch (JsonProcessingException e) {
-								logger.error("Failed to collect data for event: "+eType,e);
-								stop();
-								continue;
-							}
-							if(nfloadinfos==null || nfloadinfos.size()==0) {
-								logger.error("Failed to collect data for event: "+eType);
-								stop();
-								continue;
-							}
-							else {
-								for(int j=0;j<nfloadinfos.size();j++) {
-									try {
-										// System.out.println("nfloadinfo"+j+": "+nfloadinfos.get(j));
-										producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(j)), Optional.of(topicName));
-										synchronized(startedSendingDataLock){
-											startedSendingData = true;
-										}
-									}
-									catch(Exception e) {
-										logger.error("Failed to send nfloadlevelinfo to kafka",e);
-										stop();
-										continue;
-									}
+						List<NfLoadLevelInformation> nfloadinfos=new ArrayList<>();
+						try {
+							long t = System.nanoTime();
+							nfloadinfos = new PrometheusRequestBuilder().execute(eType, prometheusUrl);
+							prom_delay += (System.nanoTime() - t) / 1000000l;
+						} catch (JsonProcessingException e) {
+							logger.error("Failed to collect data for event: "+eType,e);
+							stop();
+							continue;
+						}
+						if(nfloadinfos==null || nfloadinfos.size()==0) {
+							logger.error("Failed to collect data for event: "+eType);
+							stop();
+							continue;
+						}
+						else {
+							for(int j=0;j<nfloadinfos.size();j++) {
+								try {
+									// System.out.println("nfloadinfo"+j+": "+nfloadinfos.get(j));
+									producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(j)), eType.toString());
+									synchronized(startedSendingDataLock){
+									startedSendingData = true;
+								}
+								}
+								catch(Exception e) {
+									logger.error("Failed to send nfloadlevelinfo to kafka",e);
+									stop();
+									continue;
 								}
 							}
 						}
