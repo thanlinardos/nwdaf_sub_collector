@@ -1,8 +1,9 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.prometheus;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +24,15 @@ import io.nwdaf.eventsubscription.requestbuilders.PrometheusRequestBuilder;
 
 @Component
 public class KafkaDataCollectionListener {
-	private static Integer no_dataCollectionEventListeners = 0;
-	private static final Object dataCollectionLock = new Object();
-	private static Boolean startedSendingData = false;
-	private static final Object startedSendingDataLock = new Object();
+	public static Integer no_dataCollectionEventListeners = 0;
+	public static final Object dataCollectionLock = new Object();
+	public static Boolean startedSendingData = false;
+	public static final Object startedSendingDataLock = new Object();
 	private static Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
-	
-	@Value(value = "${nnwdaf-eventsubscription.kafka.topic}")
-    String topicName;
+	public static final Object availableOffsetLock = new Object();
+	public static OffsetDateTime availableOffset = null;
+	public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD));
+	private List<NfLoadLevelInformation> nfloadinfos;
 
 	@Value(value = "${nnwdaf-eventsubscription.prometheus_url}")
 	String prometheusUrl;
@@ -49,39 +51,37 @@ public class KafkaDataCollectionListener {
 			long start,prom_delay,diff,wait_time;
     		start = System.nanoTime();
 			prom_delay = 0l;
-    		for(NwdafEventEnum eType : Constants.supportedEvents) {
+    		for(NwdafEventEnum eType : supportedEvents) {
 				switch(eType){
 					case NF_LOAD:
-						if(eType.equals(NwdafEventEnum.NF_LOAD)) {
-							List<NfLoadLevelInformation> nfloadinfos=new ArrayList<>();
-							try {
-								long t = System.nanoTime();
-								nfloadinfos = new PrometheusRequestBuilder().execute(eType, prometheusUrl);
-								prom_delay += (System.nanoTime() - t) / 1000000l;
-							} catch (JsonProcessingException e) {
-								logger.error("Failed to collect data for event: "+eType,e);
-								stop();
-								continue;
-							}
-							if(nfloadinfos==null || nfloadinfos.size()==0) {
-								logger.error("Failed to collect data for event: "+eType);
-								stop();
-								continue;
-							}
-							else {
-								for(int j=0;j<nfloadinfos.size();j++) {
-									try {
-										// System.out.println("nfloadinfo"+j+": "+nfloadinfos.get(j));
-										producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(j)), Optional.of(topicName));
-										synchronized(startedSendingDataLock){
-											startedSendingData = true;
-										}
+						nfloadinfos=new ArrayList<>();
+						try {
+							long t = System.nanoTime();
+							nfloadinfos = new PrometheusRequestBuilder().execute(eType, prometheusUrl);
+							prom_delay += (System.nanoTime() - t) / 1000000l;
+						} catch (JsonProcessingException e) {
+							logger.error("Failed to collect data for event: "+eType,e);
+							stop();
+							continue;
+						}
+						if(nfloadinfos==null || nfloadinfos.size()==0) {
+							logger.error("Failed to collect data for event: "+eType);
+							stop();
+							continue;
+						}
+						else {
+							for(int j=0;j<nfloadinfos.size();j++) {
+								try {
+									// System.out.println("nfloadinfo"+j+": "+nfloadinfos.get(j));
+									producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(j)),eType.toString());
+									if(!startedSendingData){
+										startSending();
 									}
-									catch(Exception e) {
-										logger.error("Failed to send nfloadlevelinfo to kafka",e);
-										stop();
-										continue;
-									}
+								}
+								catch(Exception e) {
+									logger.error("Failed to send nfloadlevelinfo to kafka",e);
+									stop();
+									continue;
 								}
 							}
 						}
@@ -107,26 +107,6 @@ public class KafkaDataCollectionListener {
     	logger.info("Prometheus Data Collection stopped!");
         return;
     }
-	public static Object getDataCollectionLock() {
-		return dataCollectionLock;
-	}
-	public static Integer getNo_dataCollectionEventListeners() {
-		return no_dataCollectionEventListeners;
-	}
-	public static Object getStartedSendingDataLock() {
-		return startedSendingDataLock;
-	}
-	public static Boolean getStartedSendingData() {
-		return startedSendingData;
-	}
-	public static void stop(){
-		synchronized (dataCollectionLock) {
-    		no_dataCollectionEventListeners--;
-    	}
-		synchronized(startedSendingDataLock){
-			startedSendingData = false;
-		}
-	}
 	public static void start(){
 		synchronized (dataCollectionLock) {
 		if(no_dataCollectionEventListeners<1) {
@@ -135,4 +115,31 @@ public class KafkaDataCollectionListener {
 		}
 		}
 	}
+	public static void stop(){
+		synchronized (dataCollectionLock) {
+    		no_dataCollectionEventListeners--;
+    	}
+		synchronized(startedSendingDataLock){
+			startedSendingData = false;
+		}
+		synchronized(availableOffsetLock){
+			availableOffset = null;
+		}
+	}
+	public static void startSending(){
+        synchronized(startedSendingDataLock){
+            startedSendingData = true;
+        }
+        synchronized(availableOffsetLock){
+            availableOffset = OffsetDateTime.now();
+        }
+    }
+    public static void stopSending(){
+        synchronized(startedSendingDataLock){
+            startedSendingData = false;
+        }
+        synchronized(availableOffsetLock){
+            availableOffset = null;
+        }
+    }
 }

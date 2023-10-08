@@ -1,13 +1,12 @@
 {"properties": [
-{
-  "name": "nnwdaf-eventsubscription.prometheus_url",
-  "type": "java.lang.String",
-  "description": "A description for 'nnwdaf-eventsubscription.prometheus_url'"
-},
-{
-    "name": "nnwdaf-eventsubscription.kafka.topic",
+  {
+    "name": "nnwdaf-eventsubscription.prometheus_url",
     "type": "java.lang.String",
-    "description": "A description for 'nnwdaf-eventsubscription.kafka.topic'"
-}
-
+    "description": "A description for 'nnwdaf-eventsubscription.prometheus_url'"
+  },
+  {
+    "name": "nnwdaf-eventsubscription.allow_dummy_data",
+    "type": "java.lang.String",
+    "description": "A description for 'nnwdaf-eventsubscription.allow_dummy_data'"
+  }
 ]}

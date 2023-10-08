@@ -16,6 +16,13 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	<repositories>
+    <repository>
+      <id>my-repo</id>
+      <name>My Repository</name>
+      <url>file:C:/thanlinardos/repository</url>
+    </repository>
+  </repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>

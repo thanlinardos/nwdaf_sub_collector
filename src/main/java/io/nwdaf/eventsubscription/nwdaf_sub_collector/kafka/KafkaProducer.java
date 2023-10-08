@@ -1,7 +1,6 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -20,7 +19,7 @@ public class KafkaProducer {
     @Autowired
     KafkaTemplate<String,String> kafkaTemplate;
 
-    public String sendMessage(String msg, Optional<String> topicNameOptional) throws IOException{
-		  return kafkaTemplate.send(topicNameOptional.orElse(this.topicName), msg).toString();
+    public String sendMessage(String msg, String topicName) throws IOException{
+		  return kafkaTemplate.send(topicName, msg).toString();
     }
 }
