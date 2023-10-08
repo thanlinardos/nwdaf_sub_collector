@@ -14,8 +14,6 @@ import lombok.Setter;
 @Getter @Setter
 public class KafkaProducer {
 
-    private String topicName;
-
     @Autowired
     KafkaTemplate<String,String> kafkaTemplate;
 
