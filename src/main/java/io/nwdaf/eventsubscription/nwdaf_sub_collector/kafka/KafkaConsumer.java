@@ -11,8 +11,10 @@ import java.util.concurrent.SynchronousQueue;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.PartitionInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -46,6 +48,7 @@ public class KafkaConsumer {
     private boolean allow_dummy_data;
 
     @Autowired
+    @Qualifier("consumer")
     private Consumer<String, String> kafkaConsumer;
 
     @Autowired
@@ -74,13 +77,17 @@ public class KafkaConsumer {
             kafkaConsumer.seekToBeginning(Collections.singletonList(topicPartition));
 
             long beginningOffset = kafkaConsumer.position(topicPartition);
-            long partitionTimestamp = kafkaConsumer.offsetsForTimes(Collections.singletonMap(topicPartition, beginningOffset)).get(topicPartition).timestamp();
-
-            if (partitionTimestamp < earliestTimestamp) {
-                earliestTimestamp = partitionTimestamp;
+            OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(Collections.singletonMap(topicPartition, beginningOffset)).get(topicPartition);
+            if(offsetAndTimestamp!=null){
+                long partitionTimestamp = offsetAndTimestamp.timestamp();
+                if (partitionTimestamp < earliestTimestamp) {
+                    earliestTimestamp = partitionTimestamp;
+                }
             }
         }
-
+        if(earliestTimestamp == Long.MAX_VALUE){
+			return;
+		}
         // Convert the earliest timestamp to a human-readable format
         String formattedTimestamp = Instant.ofEpochMilli(earliestTimestamp).toString();
         System.out.println("Earliest Timestamp in the topic: " + formattedTimestamp);
@@ -88,7 +95,6 @@ public class KafkaConsumer {
         // Set the desired timestamps for the beginning and end of the range
         long endTimestamp = Instant.parse(OffsetDateTime.now().toString()).toEpochMilli();
         long startTimestamp = Instant.parse(OffsetDateTime.now().minusSeconds(60).toString()).toEpochMilli();
-        
 
         // Seek to the beginning timestamp
         for (org.apache.kafka.common.TopicPartition partition : topicPartitions) {
@@ -107,8 +113,7 @@ public class KafkaConsumer {
                     try {
                         wakeUpMessageQueue.put(record.value());
                     } catch (InterruptedException e) {
-                        System.out.println("InterruptedException while writing to wakeup message queue. Clearing the queue...");
-                        wakeUpMessageQueue.clear();
+                        System.out.println("InterruptedException while writing to wakeup message queue.");
                     }
                 }
             });
