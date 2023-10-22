@@ -32,7 +32,7 @@ public class KafkaDummyDataListener {
     private List<NfLoadLevelInformation> nfloadinfos;
     private List<UeMobility> ueMobilities;
     public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD,NwdafEventEnum.UE_MOBILITY));
-    public static OffsetDateTime availableOffset = null;
+    public static OffsetDateTime startedCollectingTime = null;
     public static final Object availableOffsetLock = new Object();
 
 	@Autowired
@@ -126,7 +126,7 @@ public class KafkaDummyDataListener {
 			startedSendingData = false;
 		}
         synchronized(availableOffsetLock){
-			availableOffset = null;
+			startedCollectingTime = null;
 		}
     }
     public static void startSending(){
@@ -134,7 +134,7 @@ public class KafkaDummyDataListener {
             startedSendingData = true;
         }
         synchronized(availableOffsetLock){
-            availableOffset = OffsetDateTime.now();
+            startedCollectingTime = OffsetDateTime.now();
         }
     }
     public static void stopSending(){
@@ -142,7 +142,7 @@ public class KafkaDummyDataListener {
             startedSendingData = false;
         }
         synchronized(availableOffsetLock){
-            availableOffset = null;
+            startedCollectingTime = null;
         }
     }
 }

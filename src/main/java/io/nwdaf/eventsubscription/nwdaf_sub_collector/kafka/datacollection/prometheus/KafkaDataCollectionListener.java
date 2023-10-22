@@ -30,7 +30,7 @@ public class KafkaDataCollectionListener {
 	public static final Object startedSendingDataLock = new Object();
 	private static Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
 	public static final Object availableOffsetLock = new Object();
-	public static OffsetDateTime availableOffset = null;
+	public static OffsetDateTime startedCollectingTime = null;
 	public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD));
 	private List<NfLoadLevelInformation> nfloadinfos;
 
@@ -123,7 +123,7 @@ public class KafkaDataCollectionListener {
 			startedSendingData = false;
 		}
 		synchronized(availableOffsetLock){
-			availableOffset = null;
+			startedCollectingTime = null;
 		}
 	}
 	public static void startSending(){
@@ -131,7 +131,7 @@ public class KafkaDataCollectionListener {
             startedSendingData = true;
         }
         synchronized(availableOffsetLock){
-            availableOffset = OffsetDateTime.now();
+            startedCollectingTime = OffsetDateTime.now();
         }
     }
     public static void stopSending(){
@@ -139,7 +139,7 @@ public class KafkaDataCollectionListener {
             startedSendingData = false;
         }
         synchronized(availableOffsetLock){
-            availableOffset = null;
+            startedCollectingTime = null;
         }
     }
 }
