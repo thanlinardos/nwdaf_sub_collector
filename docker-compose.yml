@@ -1,0 +1,21 @@
+version: '3.8'
+networks:
+  services_default:
+    external: false
+name: nef_emulator
+services:
+  nwdafSubCollector:
+      container_name: nwdafSubCollector
+      image: thanlinardos/nwdaf_sub_collector:0.0.1-SNAPSHOT
+      # restart: always
+      ports:
+        - "${collector_port}:${collector_port}"
+        - "5006:5006"
+      networks:
+        - services_default
+      environment:
+        spring.kafka.bootstrap-servers: ${kafka1_host}:${kafka1_port}
+        spring.kafka.consumer.group-id: events
+        logging.level.org.apache.kafka: false
+        nnwdaf-eventsubscription.prometheus_url: http://${prom_host}:${prom_port}/api/v1/query
+        nnwdaf-eventsubscription.allow_dummy_data: true

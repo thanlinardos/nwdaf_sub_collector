@@ -48,13 +48,13 @@ public class KafkaDummyDataListener {
     @EventListener(id = "dummy")
     public void onApplicationEvent(final KafkaDummyDataEvent event){
         start();
-        if(no_kafkaDummyDataListeners>0){
+        if(no_kafkaDummyDataListeners>0) {
             nfloadinfos=DummyDataGenerator.generateDummyNfloadLevelInfo(10);
             ueMobilities = DummyDataGenerator.generateDummyUeMobilities(10);
         }
         long start;
         System.out.println("Started sending dummy data");
-        while(no_kafkaDummyDataListeners>0){
+        while(no_kafkaDummyDataListeners>0) {
             start = System.nanoTime();
             for(NwdafEventEnum eType : supportedEvents) {
                 switch(eType){
@@ -109,7 +109,7 @@ public class KafkaDummyDataListener {
         logger.info("Dummy Data Production stopped!");
         return;
     }
-    public static void start(){
+    public static void start() {
         synchronized (kafkaDummyDataLock) {
 			if(no_kafkaDummyDataListeners<1) {
 				no_kafkaDummyDataListeners++;
@@ -118,30 +118,30 @@ public class KafkaDummyDataListener {
 			}
 		}
     }
-    private static void stop(){
+    private static void stop() {
         synchronized (kafkaDummyDataLock) {
 			no_kafkaDummyDataListeners--;
 		}
-		synchronized(startedSendingDataLock){
+		synchronized(startedSendingDataLock) {
 			startedSendingData = false;
 		}
-        synchronized(availableOffsetLock){
+        synchronized(availableOffsetLock) {
 			startedCollectingTime = null;
 		}
     }
-    public static void startSending(){
-        synchronized(startedSendingDataLock){
+    public static void startSending() {
+        synchronized(startedSendingDataLock) {
             startedSendingData = true;
         }
-        synchronized(availableOffsetLock){
+        synchronized(availableOffsetLock) {
             startedCollectingTime = OffsetDateTime.now();
         }
     }
-    public static void stopSending(){
-        synchronized(startedSendingDataLock){
+    public static void stopSending() {
+        synchronized(startedSendingDataLock) {
             startedSendingData = false;
         }
-        synchronized(availableOffsetLock){
+        synchronized(availableOffsetLock) {
             startedCollectingTime = null;
         }
     }

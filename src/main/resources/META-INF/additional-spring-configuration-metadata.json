@@ -8,5 +8,10 @@
     "name": "nnwdaf-eventsubscription.allow_dummy_data",
     "type": "java.lang.String",
     "description": "A description for 'nnwdaf-eventsubscription.allow_dummy_data'"
+  },
+  {
+    "name": "nnwdaf-eventsubscription.allow_prom_data",
+    "type": "java.lang.String",
+    "description": "A description for 'nnwdaf-eventsubscription.allow_prom_data'"
   }
 ]}

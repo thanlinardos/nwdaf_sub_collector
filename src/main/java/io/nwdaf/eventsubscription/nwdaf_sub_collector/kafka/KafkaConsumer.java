@@ -48,6 +48,9 @@ public class KafkaConsumer {
     @Value("${nnwdaf-eventsubscription.allow_dummy_data}")
     private boolean allow_dummy_data;
 
+    @Value("${nnwdaf-eventsubscription.allow_prom_data}")
+    private boolean allow_prom_data;
+
     @Autowired
     @Qualifier("consumer")
     private Consumer<String, String> kafkaConsumer;
@@ -65,7 +68,7 @@ public class KafkaConsumer {
 	private KafkaDummyDataPublisher kafkaDummyDataPublisher;
 
     @Scheduled(fixedDelay = 1000)
-    private void wakeUpListener(){
+    private void wakeUpListener() {
         List<PartitionInfo> partitions = kafkaConsumer.partitionsFor("WAKE_UP");
 
         // Get the beginning offset for each partition and convert it to a timestamp
@@ -79,23 +82,23 @@ public class KafkaConsumer {
 
             long beginningOffset = kafkaConsumer.position(topicPartition);
             OffsetAndTimestamp offsetAndTimestamp = kafkaConsumer.offsetsForTimes(Collections.singletonMap(topicPartition, beginningOffset)).get(topicPartition);
-            if(offsetAndTimestamp!=null){
+            if(offsetAndTimestamp!=null) {
                 long partitionTimestamp = offsetAndTimestamp.timestamp();
                 if (partitionTimestamp < earliestTimestamp) {
                     earliestTimestamp = partitionTimestamp;
                 }
             }
         }
-        if(earliestTimestamp == Long.MAX_VALUE){
+        if(earliestTimestamp == Long.MAX_VALUE) {
 			return;
 		}
         // Convert the earliest timestamp to a human-readable format
-        String formattedTimestamp = Instant.ofEpochMilli(earliestTimestamp).toString();
-        System.out.println("Earliest Timestamp in the topic: " + formattedTimestamp);
+        // String formattedTimestamp = Instant.ofEpochMilli(earliestTimestamp).toString();
+        // System.out.println("Earliest Timestamp in the topic: " + formattedTimestamp);
 
         // Set the desired timestamps for the beginning and end of the range
         long endTimestamp = Instant.parse(OffsetDateTime.now().toString()).toEpochMilli();
-        long startTimestamp = Instant.parse(OffsetDateTime.now().minusSeconds(1).toString()).toEpochMilli();
+        long startTimestamp = Instant.parse(OffsetDateTime.now().minusSeconds(2).toString()).toEpochMilli();
 
         // Seek to the beginning timestamp
         for (org.apache.kafka.common.TopicPartition partition : topicPartitions) {
@@ -106,7 +109,7 @@ public class KafkaConsumer {
         }
 
         // consume messages inside the desired range
-        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(1000));
+        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(2000));
 
         // Process the received messages here
         records.forEach(record -> {
@@ -121,13 +124,14 @@ public class KafkaConsumer {
     }
 
     @Scheduled(fixedDelay = 1000)
-    private void handleWakeUp(){
+    private void handleWakeUp() {
         WakeUpMessage msg;
         long availableOffset,maxWait,wait_time,listenerAvailableOffset;
         boolean hasData;
         int expectedWaitTime;
-        System.out.println(wakeUpMessageQueue);
-        while(wakeUpMessageQueue.size()>0){
+        int max_bean_wait_time = 100;
+        // System.out.println(wakeUpMessageQueue);
+        while(wakeUpMessageQueue.size()>0) {
             msg=null;
             availableOffset=0;
             hasData=false;
@@ -138,68 +142,79 @@ public class KafkaConsumer {
             } catch (IOException e) {
                 System.out.println("IOException while converting WAKE_UP message String to WakeUpMessage object");
             }
-            if(msg==null || msg.getRequestedEvent()==null){continue;}
-            // prometheus collector
-            if(KafkaDataCollectionListener.supportedEvents.contains(msg.getRequestedEvent())){
-                maxWait = 200;
-		        wait_time = 0;
-                kafkaDataCollectionPublisher.publishDataCollection(msg.getRequestedEvent().toString());
-                try {
-                    while(wait_time<maxWait&&KafkaDataCollectionListener.no_dataCollectionEventListeners>0&&!KafkaDataCollectionListener.startedSendingData){
-                        Thread.sleep(50);
-                        wait_time+=50;
-                    }
-                } catch (InterruptedException e) {System.out.println("Failed to wait for datacollector to start sending data to kafka");}
-                if(KafkaDataCollectionListener.startedCollectingTime != null) {
-                    listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDataCollectionListener.startedCollectingTime.toInstant().toEpochMilli()) / 1000;
-                } else {
-                    listenerAvailableOffset = 0;
-                }
-                if(KafkaDataCollectionListener.startedSendingData){
-                    if(KafkaDataCollectionListener.startedCollectingTime==null){
-                        if(msg.getRequestedOffset()==null || msg.getRequestedOffset()<=Constants.MIN_PERIOD_SECONDS){
-                            hasData=true;
-                        }
-                        else{
-                            expectedWaitTime = msg.getRequestedOffset();
-                        }
-                    }
-                    else if(msg.getRequestedOffset()==null || listenerAvailableOffset > msg.getRequestedOffset()){
-                        availableOffset = listenerAvailableOffset;
-                        hasData = true;
-                    }
-                    else{
-                        expectedWaitTime =(int) (msg.getRequestedOffset() - listenerAvailableOffset);
-                    }
-                }
-            }
+            if(msg==null || msg.getRequestedEvent()==null) {continue;}
             // dummy data collector
-            if(allow_dummy_data && KafkaDummyDataListener.supportedEvents.contains(msg.getRequestedEvent())){
-                maxWait = 200;
+            if(allow_dummy_data && KafkaDummyDataListener.supportedEvents.contains(msg.getRequestedEvent())) {
+                maxWait = 1000;
 		        wait_time = 0;
                 kafkaDummyDataPublisher.publishDataCollection(msg.getRequestedEvent().toString());
-                if(KafkaDummyDataListener.startedCollectingTime!=null){
-                listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDummyDataListener.startedCollectingTime.toInstant().toEpochMilli()) / 1000;
+                if(KafkaDummyDataListener.startedCollectingTime!=null) {
+                    listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDummyDataListener.startedCollectingTime.toInstant().toEpochMilli()) / 1000;
                 } else {
                     listenerAvailableOffset = 0;
                 }
                 try {
+                    int bean_wait_time = 0;
+                    while(KafkaDummyDataListener.no_kafkaDummyDataListeners==0 && bean_wait_time<=max_bean_wait_time) {
+                        Thread.sleep(10);
+                        bean_wait_time += 10;
+                    }
                     while(wait_time<maxWait&&KafkaDummyDataListener.no_kafkaDummyDataListeners>0&&!KafkaDummyDataListener.startedSendingData){
                         Thread.sleep(50);
                         wait_time+=50;
                     }
                 } catch (InterruptedException e) {System.out.println("Failed to wait for dummy datacollector to start sending dummy data to kafka");}
-
-                if(KafkaDummyDataListener.startedSendingData){
-                    if(KafkaDummyDataListener.startedCollectingTime==null){
-                        if(msg.getRequestedOffset()==null || msg.getRequestedOffset()<=Constants.MIN_PERIOD_SECONDS){
+                System.out.println("(DUMMY) wait_time="+wait_time+" startedsending="+KafkaDummyDataListener.startedSendingData+" collectTime="+KafkaDummyDataListener.startedCollectingTime+" no_collectors="+KafkaDummyDataListener.no_kafkaDummyDataListeners);
+                if(KafkaDummyDataListener.startedSendingData) {
+                    if(KafkaDummyDataListener.startedCollectingTime==null) {
+                        if(msg.getRequestedOffset()==null || msg.getRequestedOffset()<=Constants.MIN_PERIOD_SECONDS) {
                             hasData=true;
                         }
-                        else{
+                        else {
                             expectedWaitTime = msg.getRequestedOffset();
                         }
                     }
-                    else if(msg.getRequestedOffset()==null || listenerAvailableOffset > msg.getRequestedOffset()){
+                    else if(msg.getRequestedOffset()==null || listenerAvailableOffset > msg.getRequestedOffset()) {
+                        availableOffset = listenerAvailableOffset;
+                        hasData = true;
+                    }
+                    else {
+                        expectedWaitTime =(int) (msg.getRequestedOffset() - listenerAvailableOffset);
+                    }
+                }
+            }
+            // prometheus collector
+            if(allow_prom_data && KafkaDataCollectionListener.supportedEvents.contains(msg.getRequestedEvent())) {
+                maxWait = 1000;
+		        wait_time = 0;
+                kafkaDataCollectionPublisher.publishDataCollection(msg.getRequestedEvent().toString());
+                try {
+                    int bean_wait_time = 0;
+                    while(KafkaDataCollectionListener.no_dataCollectionEventListeners==0 && bean_wait_time<=max_bean_wait_time) {
+                        Thread.sleep(10);
+                        bean_wait_time += 10;
+                    }
+                    while(wait_time<maxWait&&KafkaDataCollectionListener.no_dataCollectionEventListeners>0&&!KafkaDataCollectionListener.startedSendingData){
+                        Thread.sleep(50);
+                        wait_time+=50;
+                    }
+                } catch (InterruptedException e) {System.out.println("Failed to wait for datacollector to start sending data to kafka");}
+                System.out.println("(PROM) wait_time="+wait_time+" startedsending="+KafkaDataCollectionListener.startedSendingData+" collectTime="+KafkaDataCollectionListener.startedCollectingTime+" no_collectors="+KafkaDataCollectionListener.no_dataCollectionEventListeners);
+                if(KafkaDataCollectionListener.startedCollectingTime != null) {
+                    listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDataCollectionListener.startedCollectingTime.toInstant().toEpochMilli()) / 1000;
+                } else {
+                    listenerAvailableOffset = 0;
+                }
+                if(KafkaDataCollectionListener.startedSendingData) {
+                    if(KafkaDataCollectionListener.startedCollectingTime==null) {
+                        if(msg.getRequestedOffset()==null || msg.getRequestedOffset()<=Constants.MIN_PERIOD_SECONDS){
+                            hasData=true;
+                        }
+                        else {
+                            expectedWaitTime = msg.getRequestedOffset();
+                        }
+                    }
+                    else if(msg.getRequestedOffset()==null || listenerAvailableOffset > msg.getRequestedOffset()) {
                         availableOffset = listenerAvailableOffset;
                         hasData = true;
                     }
@@ -214,37 +229,37 @@ public class KafkaConsumer {
                     .hasData(hasData).availableOffset((int)availableOffset)
                     .expectedWaitTime(expectedWaitTime)
                     .build();
-            try{
+            try {
                 kafkaProducer.sendMessage(response.toString(), "DISCOVER");
-            }catch(IOException e){
+            } catch(IOException e) {
                 System.out.println("IOException while sending DISCOVER message");
             }
         }
     }
 
-	public static void startedSaving(){
-		synchronized(startedSavingDataLock){
+	public static void startedSaving() {
+		synchronized(startedSavingDataLock) {
 			startedSavingData = true;
 		}
 	}
-    public static void stoppedSaving(){
-		synchronized(startedSavingDataLock){
+    public static void stoppedSaving() {
+		synchronized(startedSavingDataLock) {
 			startedSavingData = false;
 		}
 	}
-	public static void startListening(){
-		synchronized(isListeningLock){
+	public static void startListening() {
+		synchronized(isListeningLock) {
 			isListening = true;
 		}
 	}
-    public static void stopListening(){
-		synchronized(isListeningLock){
+    public static void stopListening() {
+		synchronized(isListeningLock) {
 			isListening = false;
 		}
-		synchronized(startedSavingDataLock){
+		synchronized(startedSavingDataLock) {
 			startedSavingData = false;
 		}
-		synchronized(startedReceivingDataLock){
+		synchronized(startedReceivingDataLock) {
 			startedReceivingData = false;
 		}
 	}
