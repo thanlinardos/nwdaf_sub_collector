@@ -47,10 +47,12 @@ public class KafkaDummyDataListener {
     @Async
     @EventListener(id = "dummy")
     public void onApplicationEvent(final KafkaDummyDataEvent event){
-        start();
+        if(!start()) {
+			return;
+		}
         if(no_kafkaDummyDataListeners>0) {
-            nfloadinfos=DummyDataGenerator.generateDummyNfloadLevelInfo(10);
-            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(10);
+            nfloadinfos = DummyDataGenerator.generateDummyNfloadLevelInfo(10);
+            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(0);
         }
         long start;
         System.out.println("Started sending dummy data");
@@ -62,6 +64,7 @@ public class KafkaDummyDataListener {
                         nfloadinfos = DummyDataGenerator.changeNfLoadTimeDependentProperties(nfloadinfos);
                         for(int k=0;k<nfloadinfos.size();k++) {
                             try {
+                                logger.info("collector sent nfload with time:"+nfloadinfos.get(k).getTimeStamp());
                                 producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(k)), eType.toString());
                                 if(!startedSendingData){
                                     startSending();
@@ -109,18 +112,21 @@ public class KafkaDummyDataListener {
         logger.info("Dummy Data Production stopped!");
         return;
     }
-    public static void start() {
+    public static boolean start() {
         synchronized (kafkaDummyDataLock) {
 			if(no_kafkaDummyDataListeners<1) {
 				no_kafkaDummyDataListeners++;
                 logger.info("producing dummy data to send to kafka...");
-                
+                return true;
 			}
 		}
+        return false;
     }
     private static void stop() {
         synchronized (kafkaDummyDataLock) {
-			no_kafkaDummyDataListeners--;
+            if(no_kafkaDummyDataListeners>0) {
+                no_kafkaDummyDataListeners--;
+            }
 		}
 		synchronized(startedSendingDataLock) {
 			startedSendingData = false;

@@ -46,7 +46,9 @@ public class KafkaDataCollectionListener {
     @Async
     @EventListener(id="data")
     public void onApplicationEvent(final KafkaDataCollectionEvent event) {
-    	start();
+    	if(!start()) {
+			return;
+		}
     	while(no_dataCollectionEventListeners>0) {
 			long start,prom_delay,diff,wait_time;
     		start = System.nanoTime();
@@ -107,13 +109,15 @@ public class KafkaDataCollectionListener {
     	logger.info("Prometheus Data Collection stopped!");
         return;
     }
-	public static void start(){
+	public static boolean start(){
 		synchronized (dataCollectionLock) {
-		if(no_dataCollectionEventListeners<1) {
-			no_dataCollectionEventListeners++;
-			logger.info("collecting data...");
+			if(no_dataCollectionEventListeners<1) {
+				no_dataCollectionEventListeners++;
+				logger.info("collecting data...");
+				return true;
+			}
 		}
-		}
+		return false;
 	}
 	public static void stop(){
 		synchronized (dataCollectionLock) {
