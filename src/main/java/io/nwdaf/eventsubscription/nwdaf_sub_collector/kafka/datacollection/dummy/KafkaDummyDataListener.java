@@ -52,7 +52,7 @@ public class KafkaDummyDataListener {
 		}
         if(no_kafkaDummyDataListeners>0) {
             nfloadinfos = DummyDataGenerator.generateDummyNfloadLevelInfo(10);
-            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(0);
+            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(10);
         }
         long start;
         System.out.println("Started sending dummy data");
@@ -64,7 +64,9 @@ public class KafkaDummyDataListener {
                         nfloadinfos = DummyDataGenerator.changeNfLoadTimeDependentProperties(nfloadinfos);
                         for(int k=0;k<nfloadinfos.size();k++) {
                             try {
-                                logger.info("collector sent nfload with time:"+nfloadinfos.get(k).getTimeStamp());
+                                if(k==0) {
+                                    logger.info("collector sent nfload with time:"+nfloadinfos.get(k).getTimeStamp());
+                                }
                                 producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(k)), eType.toString());
                                 if(!startedSendingData){
                                     startSending();
@@ -81,6 +83,9 @@ public class KafkaDummyDataListener {
                         ueMobilities = DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities);
                         for(int k=0;k<ueMobilities.size();k++) {
                             try {
+                                if(k==0) {
+                                    logger.info("collector sent ue_mobility with time:"+ueMobilities.get(k).getTs());
+                                }
                                 producer.sendMessage(objectMapper.writeValueAsString(ueMobilities.get(k)), eType.toString());
                                 if(!startedSendingData){
                                     startSending();
