@@ -28,7 +28,7 @@ public class KafkaDummyDataListener {
 	public static final Object kafkaDummyDataLock = new Object();
 	public static Boolean startedSendingData = false;
 	public static final Object startedSendingDataLock = new Object();
-	private static Logger logger = LoggerFactory.getLogger(KafkaDummyDataListener.class);
+	private static final Logger logger = LoggerFactory.getLogger(KafkaDummyDataListener.class);
     private List<NfLoadLevelInformation> nfloadinfos;
     private List<UeMobility> ueMobilities;
     public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD,NwdafEventEnum.UE_MOBILITY));
@@ -51,7 +51,7 @@ public class KafkaDummyDataListener {
 			return;
 		}
         if(no_kafkaDummyDataListeners>0) {
-            nfloadinfos = DummyDataGenerator.generateDummyNfloadLevelInfo(10);
+            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(10);
             ueMobilities = DummyDataGenerator.generateDummyUeMobilities(10);
         }
         long start;
