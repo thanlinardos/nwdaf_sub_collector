@@ -44,11 +44,9 @@ public class KafkaDummyDataListener {
         this.env = env;
         this.producer = producer;
         this.objectMapper = objectMapper;
-        if (startedCollectingTimes.size() < supportedEvents.size()) {
-            for (int i = 0; i < supportedEvents.size(); i++) {
+        while (startedCollectingTimes.size() < supportedEvents.size()) {
                 startedCollectingTimes.add(null);
                 activeEvents.add(null);
-            }
         }
     }
 

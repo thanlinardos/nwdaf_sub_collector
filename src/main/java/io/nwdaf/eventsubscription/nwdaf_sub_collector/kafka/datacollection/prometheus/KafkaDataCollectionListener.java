@@ -45,6 +45,10 @@ public class KafkaDataCollectionListener {
     public KafkaDataCollectionListener(KafkaProducer producer, ObjectMapper objectMapper) {
         this.producer = producer;
         this.objectMapper = objectMapper;
+        while (startedCollectingTimes.size() < supportedEvents.size()) {
+            startedCollectingTimes.add(null);
+            activeEvents.add(null);
+        }
     }
 
     @Async
