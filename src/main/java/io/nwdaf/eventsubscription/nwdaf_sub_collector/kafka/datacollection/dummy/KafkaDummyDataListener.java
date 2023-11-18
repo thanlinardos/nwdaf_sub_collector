@@ -30,7 +30,7 @@ public class KafkaDummyDataListener {
     private List<NfLoadLevelInformation> nfloadinfos;
     private List<UeMobility> ueMobilities;
     private List<UeCommunication> ueCommunications;
-    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD, NwdafEventEnum.UE_MOBILITY));
+    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD, NwdafEventEnum.UE_MOBILITY, NwdafEventEnum.UE_COMM));
     public static List<NwdafEventEnum> activeEvents = new ArrayList<>();
     public static final Object activeEventsLock = new Object();
     public static List<OffsetDateTime> startedCollectingTimes = new ArrayList<>();
