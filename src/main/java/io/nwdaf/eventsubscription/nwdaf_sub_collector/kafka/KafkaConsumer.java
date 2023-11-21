@@ -32,6 +32,9 @@ import io.nwdaf.eventsubscription.utilities.Constants;
 
 import org.apache.kafka.common.TopicPartition;
 
+import static io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dummy.KafkaDummyDataListener.no_kafkaDummyDataListeners;
+import static io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.prometheus.KafkaDataCollectionListener.no_dataCollectionEventListeners;
+
 @Component
 public class KafkaConsumer {
     public static Boolean startedReceivingData = false;
@@ -67,7 +70,7 @@ public class KafkaConsumer {
     @Autowired
     private KafkaDummyDataPublisher kafkaDummyDataPublisher;
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 1)
     private void wakeUpListener() {
         List<PartitionInfo> partitions = kafkaConsumer.partitionsFor("WAKE_UP");
 
@@ -109,7 +112,7 @@ public class KafkaConsumer {
         }
 
         // consume messages inside the desired range
-        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(2000));
+        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(1));
 
         // Process the received messages here
         records.forEach(record -> {
@@ -123,15 +126,16 @@ public class KafkaConsumer {
         });
     }
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 1)
     private void handleWakeUp() {
         WakeUpMessage msg;
-        long availableOffset, maxWait, waitTime, listenerAvailableOffset;
+        long availableOffset, listenerAvailableOffset;
+        double maxWait, waitTime;
         boolean hasData;
         int expectedWaitTime;
         int max_bean_wait_time = 100;
         // System.out.println(wakeUpMessageQueue);
-        while (wakeUpMessageQueue.size() > 0) {
+        while (!wakeUpMessageQueue.isEmpty()) {
             msg = null;
             availableOffset = 0;
             hasData = false;
@@ -148,26 +152,26 @@ public class KafkaConsumer {
             // dummy data collector
             int activeEventIndex;
             if (allow_dummy_data && (activeEventIndex = KafkaDummyDataListener.supportedEvents.indexOf(msg.getRequestedEvent())) != -1) {
-                maxWait = 1000;
-                waitTime = 0;
+                maxWait = 1000.0;
+                waitTime = 0.0;
                 kafkaDummyDataPublisher.publishDataCollection(List.of(msg.getRequestedEvent()));
                 if (KafkaDummyDataListener.startedCollectingTimes.get(activeEventIndex) != null) {
                     listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDummyDataListener.startedCollectingTimes.get(activeEventIndex).toInstant().toEpochMilli()) / 1000;
                 }
                 try {
-                    int bean_wait_time = 0;
-                    while (KafkaDummyDataListener.no_kafkaDummyDataListeners == 0 && bean_wait_time <= max_bean_wait_time) {
-                        Thread.sleep(10);
-                        bean_wait_time += 10;
+                    double bean_wait_time = 0.0;
+                    while (no_kafkaDummyDataListeners == 0 && bean_wait_time <= max_bean_wait_time) {
+                        Thread.sleep(0,1_000);
+                        bean_wait_time += 0.001;
                     }
-                    while (waitTime < maxWait && KafkaDummyDataListener.no_kafkaDummyDataListeners > 0 && !KafkaDummyDataListener.startedSendingData) {
-                        Thread.sleep(50);
-                        waitTime += 50;
+                    while (waitTime < maxWait && no_kafkaDummyDataListeners > 0 && !KafkaDummyDataListener.startedSendingData) {
+                        Thread.sleep(0,1_000);
+                        waitTime += 0.001;
                     }
                 } catch (InterruptedException e) {
                     System.out.println("Failed to wait for dummy datacollector to start sending dummy data to kafka");
                 }
-                System.out.println("(DUMMY) waitTime=" + waitTime + " startedsending=" + KafkaDummyDataListener.startedSendingData + " collectTime=" + KafkaDummyDataListener.startedCollectingTimes.get(activeEventIndex) + " no_collectors=" + KafkaDummyDataListener.no_kafkaDummyDataListeners);
+                System.out.println("(DUMMY) waitTime=" + waitTime + " startedsending=" + KafkaDummyDataListener.startedSendingData + " collectTime=" + KafkaDummyDataListener.startedCollectingTimes.get(activeEventIndex) + " no_collectors=" + no_kafkaDummyDataListeners);
                 if (KafkaDummyDataListener.startedSendingData && KafkaDummyDataListener.activeEvents.contains(msg.getRequestedEvent())) {
                     if (KafkaDummyDataListener.startedCollectingTimes.get(activeEventIndex) == null) {
                         KafkaDummyDataListener.startSending(activeEventIndex);
@@ -187,23 +191,23 @@ public class KafkaConsumer {
             }
             // prometheus collector
             if (allow_prom_data && (activeEventIndex = KafkaDataCollectionListener.supportedEvents.indexOf(msg.getRequestedEvent())) != -1) {
-                maxWait = 1000;
-                waitTime = 0;
+                maxWait = 1000.0;
+                waitTime = 0.0;
                 kafkaDataCollectionPublisher.publishDataCollection(List.of(msg.getRequestedEvent()));
                 try {
-                    int bean_wait_time = 0;
-                    while (KafkaDataCollectionListener.no_dataCollectionEventListeners == 0 && bean_wait_time <= max_bean_wait_time) {
-                        Thread.sleep(10);
-                        bean_wait_time += 10;
+                    double bean_wait_time = 0.0;
+                    while (no_dataCollectionEventListeners == 0 && bean_wait_time <= max_bean_wait_time) {
+                        Thread.sleep(0, 1_000);
+                        bean_wait_time += 0.001;
                     }
-                    while (waitTime < maxWait && KafkaDataCollectionListener.no_dataCollectionEventListeners > 0 && !KafkaDataCollectionListener.startedSendingData) {
-                        Thread.sleep(50);
-                        waitTime += 50;
+                    while (waitTime < maxWait && no_dataCollectionEventListeners > 0 && !KafkaDataCollectionListener.startedSendingData) {
+                        Thread.sleep(0, 1_000);
+                        waitTime += 0.001;
                     }
                 } catch (InterruptedException e) {
                     System.out.println("Failed to wait for datacollector to start sending data to kafka");
                 }
-                System.out.println("(PROM) wait_time=" + waitTime + " startedsending=" + KafkaDataCollectionListener.startedSendingData + " collectTime=" + KafkaDataCollectionListener.startedCollectingTimes.get(activeEventIndex) + " no_collectors=" + KafkaDataCollectionListener.no_dataCollectionEventListeners);
+                System.out.println("(PROM) wait_time=" + waitTime + " startedsending=" + KafkaDataCollectionListener.startedSendingData + " collectTime=" + KafkaDataCollectionListener.startedCollectingTimes.get(activeEventIndex) + " no_collectors=" + no_dataCollectionEventListeners);
                 if (KafkaDataCollectionListener.startedCollectingTimes.get(activeEventIndex) != null) {
                     listenerAvailableOffset = (Instant.now().toEpochMilli() - KafkaDataCollectionListener.startedCollectingTimes.get(activeEventIndex).toInstant().toEpochMilli()) / 1000;
                 } else {

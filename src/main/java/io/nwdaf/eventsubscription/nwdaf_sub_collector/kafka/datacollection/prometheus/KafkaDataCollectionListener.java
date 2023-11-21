@@ -62,7 +62,7 @@ public class KafkaDataCollectionListener {
         while (no_dataCollectionEventListeners > 0) {
             long start, prom_delay, diff, wait_time;
             start = System.nanoTime();
-            prom_delay = 0l;
+            prom_delay = 0L;
             for (NwdafEventEnum eType : supportedEvents) {
                 switch (eType) {
                     case NF_LOAD:

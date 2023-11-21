@@ -69,9 +69,9 @@ public class KafkaDummyDataListener {
             return;
         }
         if (no_kafkaDummyDataListeners > 0) {
-            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(10);
-            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(10);
-            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(10);
+            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(100);
+            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(100);
+            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(100);
         }
         long start;
         System.out.println("Started sending dummy data for events: " + event.getMessage()
