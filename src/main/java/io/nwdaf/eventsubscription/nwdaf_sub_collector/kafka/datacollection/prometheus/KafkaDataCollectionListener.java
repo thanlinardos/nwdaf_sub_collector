@@ -27,10 +27,9 @@ public class KafkaDataCollectionListener {
     public static final Object dataCollectionLock = new Object();
     public static Boolean startedSendingData = false;
     public static final Object startedSendingDataLock = new Object();
-    private static Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
     public static final Object availableOffsetLock = new Object();
-    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD));
-    private List<NfLoadLevelInformation> nfloadinfos;
+    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(List.of(NwdafEventEnum.NF_LOAD));
     public static List<NwdafEventEnum> activeEvents = new ArrayList<>();
     public static final Object activeEventsLock = new Object();
     public static List<OffsetDateTime> startedCollectingTimes = new ArrayList<>();
@@ -69,17 +68,17 @@ public class KafkaDataCollectionListener {
                         if (!synchronizedIsEventInsideActiveList(NwdafEventEnum.NF_LOAD)) {
                             break;
                         }
-                        nfloadinfos = new ArrayList<>();
+                        List<NfLoadLevelInformation> nfloadinfos;
                         try {
                             long t = System.nanoTime();
                             nfloadinfos = new PrometheusRequestBuilder().execute(eType, prometheusUrl);
-                            prom_delay += (System.nanoTime() - t) / 1000000l;
+                            prom_delay += (System.nanoTime() - t) / 1000000L;
                         } catch (JsonProcessingException e) {
                             logger.error("Failed to collect data for event: " + eType, e);
                             stop();
                             continue;
                         }
-                        if (nfloadinfos == null || nfloadinfos.size() == 0) {
+                        if (nfloadinfos == null || nfloadinfos.isEmpty()) {
                             logger.error("Failed to collect data for event: " + eType);
                             stop();
                             continue;
@@ -106,13 +105,13 @@ public class KafkaDataCollectionListener {
                         break;
                 }
             }
-            diff = (System.nanoTime() - start) / 1000000l;
-            wait_time = (long) Constants.MIN_PERIOD_SECONDS * 1000l;
+            diff = (System.nanoTime() - start) / 1000000L;
+            wait_time = (long) Constants.MIN_PERIOD_SECONDS * 1000L;
             if (diff < wait_time) {
                 try {
                     Thread.sleep(wait_time - diff);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to wait for timeout",e);
                     stop();
                     continue;
                 }
@@ -121,7 +120,6 @@ public class KafkaDataCollectionListener {
             logger.info("data coll total delay = " + diff + "ms");
         }
         logger.info("Prometheus Data Collection stopped!");
-        return;
     }
 
     public static boolean start() {

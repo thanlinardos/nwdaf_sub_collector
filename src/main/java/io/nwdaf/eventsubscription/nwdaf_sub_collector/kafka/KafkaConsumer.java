@@ -95,9 +95,6 @@ public class KafkaConsumer {
         if (earliestTimestamp == Long.MAX_VALUE) {
             return;
         }
-        // Convert the earliest timestamp to a human-readable format
-        // String formattedTimestamp = Instant.ofEpochMilli(earliestTimestamp).toString();
-        // System.out.println("Earliest Timestamp in the topic: " + formattedTimestamp);
 
         // Set the desired timestamps for the beginning and end of the range
         long endTimestamp = Instant.parse(OffsetDateTime.now().toString()).toEpochMilli();
@@ -134,7 +131,6 @@ public class KafkaConsumer {
         boolean hasData;
         int expectedWaitTime;
         int max_bean_wait_time = 100;
-        // System.out.println(wakeUpMessageQueue);
         while (!wakeUpMessageQueue.isEmpty()) {
             msg = null;
             availableOffset = 0;

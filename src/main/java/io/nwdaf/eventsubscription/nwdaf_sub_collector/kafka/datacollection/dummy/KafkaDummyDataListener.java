@@ -84,7 +84,7 @@ public class KafkaDummyDataListener {
                         if (!synchronizedIsEventInsideActiveList(NwdafEventEnum.NF_LOAD)) {
                             break;
                         }
-                        nfloadinfos = DummyDataGenerator.changeNfLoadTimeDependentProperties(nfloadinfos);
+                        DummyDataGenerator.changeNfLoadTimeDependentProperties(nfloadinfos);
                         for (int k = 0; k < nfloadinfos.size(); k++) {
                             try {
                                 producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(k)), eType.toString());
@@ -105,7 +105,7 @@ public class KafkaDummyDataListener {
                         if (!synchronizedIsEventInsideActiveList(NwdafEventEnum.UE_MOBILITY)) {
                             break;
                         }
-                        ueMobilities = DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities);
+                        DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities);
                         for (int k = 0; k < ueMobilities.size(); k++) {
                             try {
                                 if (k == 0) {
@@ -126,7 +126,7 @@ public class KafkaDummyDataListener {
                         if (!synchronizedIsEventInsideActiveList(NwdafEventEnum.UE_COMM)) {
                             break;
                         }
-                        ueCommunications = DummyDataGenerator.changeUeCommunicationsTimeDependentProperties(ueCommunications);
+                        DummyDataGenerator.changeUeCommunicationsTimeDependentProperties(ueCommunications);
                         for (int k = 0; k < ueCommunications.size(); k++) {
                             try {
                                 if (k == 0) {
@@ -147,20 +147,19 @@ public class KafkaDummyDataListener {
                         break;
                 }
             }
-            long diff = (System.nanoTime() - start) / 1000000l;
-            long wait_time = (long) Constants.MIN_PERIOD_SECONDS * 1000l;
+            long diff = (System.nanoTime() - start) / 1000000L;
+            long wait_time = (long) Constants.MIN_PERIOD_SECONDS * 1000L;
             if (diff < wait_time) {
                 try {
                     Thread.sleep(wait_time - diff);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to wait for timeout",e);
                     stop();
                     continue;
                 }
             }
         }
         logger.info("Dummy Data Production stopped!");
-        return;
     }
 
     public static boolean start() {
