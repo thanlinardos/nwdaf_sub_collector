@@ -4,8 +4,10 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import io.nwdaf.eventsubscription.model.UeCommunication;
+import io.nwdaf.eventsubscription.utilities.ParserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +21,8 @@ import io.nwdaf.eventsubscription.model.NfLoadLevelInformation;
 import io.nwdaf.eventsubscription.model.NwdafEvent.NwdafEventEnum;
 import io.nwdaf.eventsubscription.model.UeMobility;
 import io.nwdaf.eventsubscription.utilities.Constants;
+
+import static io.nwdaf.eventsubscription.utilities.ParserUtil.safeParseInteger;
 
 @Component
 public class KafkaDummyDataListener {
@@ -35,6 +39,9 @@ public class KafkaDummyDataListener {
     public static final Object activeEventsLock = new Object();
     public static List<OffsetDateTime> startedCollectingTimes = new ArrayList<>();
     public static final Object availableOffsetLock = new Object();
+    public String no_dummy_nfload;
+    public String no_dummy_uemob;
+    public String no_dummy_uecomm;
 
     final Environment env;
     final KafkaProducer producer;
@@ -48,6 +55,9 @@ public class KafkaDummyDataListener {
                 startedCollectingTimes.add(null);
                 activeEvents.add(null);
         }
+        no_dummy_nfload = env.getProperty("nnwdaf-eventsubscription.no_dummy_nfload");
+        no_dummy_uemob = env.getProperty("nnwdaf-eventsubscription.no_dummy_uemob");
+        no_dummy_uecomm = env.getProperty("nnwdaf-eventsubscription.no_dummy_uecomm");
     }
 
     @Async
@@ -69,9 +79,9 @@ public class KafkaDummyDataListener {
             return;
         }
         if (no_kafkaDummyDataListeners > 0) {
-            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(100);
-            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(100);
-            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(100);
+            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(safeParseInteger(no_dummy_nfload));
+            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(safeParseInteger(no_dummy_uemob));
+            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(safeParseInteger(no_dummy_uecomm));
         }
         long start;
         System.out.println("Started sending dummy data for events: " + event.getMessage()
