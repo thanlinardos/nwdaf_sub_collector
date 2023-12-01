@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import io.nwdaf.eventsubscription.nwdaf_sub_collector.NwdafSubCollectorApplication;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -32,6 +33,7 @@ import io.nwdaf.eventsubscription.utilities.Constants;
 
 import org.apache.kafka.common.TopicPartition;
 
+import static io.nwdaf.eventsubscription.nwdaf_sub_collector.NwdafSubCollectorApplication.NWDAF_COLLECTOR_INSTANCE_ID;
 import static io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dummy.KafkaDummyDataListener.no_kafkaDummyDataListeners;
 import static io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.prometheus.KafkaDataCollectionListener.no_dataCollectionEventListeners;
 
@@ -227,6 +229,7 @@ public class KafkaConsumer {
                 }
             }
             DiscoverMessage response = DiscoverMessage.builder()
+                    .collectorInstanceId(NWDAF_COLLECTOR_INSTANCE_ID)
                     .requestedEvent(msg.getRequestedEvent())
                     .requestedOffset(msg.getRequestedOffset())
                     .hasData(hasData).availableOffset((int) availableOffset)

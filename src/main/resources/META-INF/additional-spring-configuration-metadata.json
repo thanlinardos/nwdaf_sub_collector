@@ -29,5 +29,10 @@
       "name": "nnwdaf-eventsubscription.no_dummy_uecomm",
       "type": "java.lang.String",
       "description": "Description for nnwdaf-eventsubscription.no_dummy_uecomm."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.collector_area_of_interest",
+      "type": "java.util.UUID",
+      "description": "Description for nnwdaf-eventsubscription.collector_area_of_interest."
     }
   ]}
