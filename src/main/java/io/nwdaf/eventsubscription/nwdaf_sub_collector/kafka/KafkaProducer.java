@@ -2,7 +2,6 @@ package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
@@ -11,13 +10,17 @@ import lombok.Setter;
 
 
 @Component
-@Getter @Setter
+@Getter
+@Setter
 public class KafkaProducer {
 
-    @Autowired
-    KafkaTemplate<String,String> kafkaTemplate;
+    final KafkaTemplate<String, String> kafkaTemplate;
 
-    public String sendMessage(String msg, String topicName) throws IOException{
-		  return kafkaTemplate.send(topicName, msg).toString();
+    public KafkaProducer(KafkaTemplate<String, String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void sendMessage(String msg, String topicName) throws IOException {
+        kafkaTemplate.send(topicName, msg);
     }
 }

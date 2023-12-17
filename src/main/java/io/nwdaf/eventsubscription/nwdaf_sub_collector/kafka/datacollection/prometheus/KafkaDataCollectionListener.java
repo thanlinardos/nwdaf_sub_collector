@@ -58,7 +58,9 @@ public class KafkaDataCollectionListener {
         }
         System.out.println("Started sending data for events: " + event.getMessage()
                 + " , Supported Events: " + supportedEvents + " , Active events:" + activeEvents);
+
         while (no_dataCollectionEventListeners > 0) {
+
             long start, prom_delay, diff, wait_time;
             start = System.nanoTime();
             prom_delay = 0L;
@@ -111,7 +113,7 @@ public class KafkaDataCollectionListener {
                 try {
                     Thread.sleep(wait_time - diff);
                 } catch (InterruptedException e) {
-                    logger.error("Failed to wait for timeout",e);
+                    logger.error("Failed to wait for timeout", e);
                     stop();
                     continue;
                 }
