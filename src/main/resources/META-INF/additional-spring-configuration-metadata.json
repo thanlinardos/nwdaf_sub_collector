@@ -34,5 +34,35 @@
       "name": "nnwdaf-eventsubscription.collector_area_of_interest",
       "type": "java.util.UUID",
       "description": "Description for nnwdaf-eventsubscription.collector_area_of_interest."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.nef_state_ues",
+      "type": "java.lang.String",
+      "description": "Description for nnwdaf-eventsubscription.nef_state_ues."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.nef_url",
+      "type": "java.lang.String",
+      "description": "Description for nnwdaf-eventsubscription.nef_url."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.nef_token",
+      "type": "java.lang.String",
+      "description": "Description for nnwdaf-eventsubscription.nef_token."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.allow_nef_data",
+      "type": "java.lang.String",
+      "description": "Description for nnwdaf-eventsubscription.allow_nef_data."
+    },
+    {
+      "name": "trust.store",
+      "type": "java.lang.String",
+      "description": "Description for trust.store."
+    },
+    {
+      "name": "DEBUG_PORT",
+      "type": "java.lang.String",
+      "description": "Description for DEBUG_PORT."
     }
   ]}

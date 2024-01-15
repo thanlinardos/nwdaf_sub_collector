@@ -2,11 +2,10 @@ package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dumm
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.nwdaf.eventsubscription.model.NwdafEvent;
 import io.nwdaf.eventsubscription.model.UeCommunication;
+import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.DataListenerSignals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -27,14 +26,9 @@ import static io.nwdaf.eventsubscription.utilities.ParserUtil.safeParseInteger;
 
 @Component
 public class KafkaDummyDataListener {
-    public static AtomicInteger no_kafkaDummyDataListeners = new AtomicInteger(0);
-    public static List<NwdafEventEnum> supportedEvents = new ArrayList<>(Arrays.asList(NwdafEventEnum.NF_LOAD, NwdafEventEnum.UE_MOBILITY, NwdafEventEnum.UE_COMM));
-    public static ConcurrentHashMap<NwdafEventEnum, Boolean> eventProducerIsActive = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<NwdafEventEnum, Boolean> eventProducerStartedSending = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<NwdafEventEnum, OffsetDateTime> eventStartedCollectingTimes = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<NwdafEvent.NwdafEventEnum, Long> eventProducerCounters = new ConcurrentHashMap<>();
-    public static OffsetDateTime startTime;
-    public static OffsetDateTime endTime;
+    public static DataListenerSignals dummyDataListenerSignals = new DataListenerSignals(
+            Arrays.asList(NwdafEvent.NwdafEventEnum.NF_LOAD, NwdafEvent.NwdafEventEnum.UE_MOBILITY, NwdafEvent.NwdafEventEnum.UE_COMM),
+            LoggerFactory.getLogger(KafkaDummyDataListener.class));
 
     public final String no_dummy_nfload;
     public final String no_dummy_uemob;
@@ -54,11 +48,11 @@ public class KafkaDummyDataListener {
         this.producer = producer;
         this.objectMapper = objectMapper;
 
-        for(NwdafEventEnum eType : supportedEvents) {
-            eventProducerStartedSending.put(eType, false);
-            eventProducerIsActive.put(eType, false);
-            eventStartedCollectingTimes.put(eType, OffsetDateTime.MIN);
-            eventProducerCounters.put(eType, 0L);
+        for (NwdafEventEnum eType : dummyDataListenerSignals.getSupportedEvents()) {
+            dummyDataListenerSignals.getEventProducerStartedSending().put(eType, false);
+            dummyDataListenerSignals.getEventProducerIsActive().put(eType, false);
+            dummyDataListenerSignals.getEventStartedCollectingTimes().put(eType, OffsetDateTime.MIN);
+            dummyDataListenerSignals.getEventProducerCounters().put(eType, 0L);
         }
 
         no_dummy_nfload = env.getProperty("nnwdaf-eventsubscription.no_dummy_nfload");
@@ -70,21 +64,21 @@ public class KafkaDummyDataListener {
     @EventListener(id = "dummy")
     public void onApplicationEvent(final KafkaDummyDataEvent event) {
 
-        if (!supportedEvents.containsAll(event.getMessage())) {
+        if (!dummyDataListenerSignals.getSupportedEvents().containsAll(event.getMessage())) {
 
             System.out.println("Dummy Data Producer doesn't support one of the following events: " + event.getMessage() +
-                    " , Supported Events: " + supportedEvents +
-                    " , Active events:" + eventProducerStartedSending.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
+                    " , Supported Events: " + dummyDataListenerSignals.getSupportedEvents() +
+                    " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
             return;
         }
-            for (NwdafEventEnum e : event.getMessage()) {
-                activate(e);
-            }
-        if (!start()) {
+        for (NwdafEventEnum e : event.getMessage()) {
+            dummyDataListenerSignals.activate(e);
+        }
+        if (!dummyDataListenerSignals.start()) {
             return;
         }
 
-        if (no_kafkaDummyDataListeners.get() > 0) {
+        if (dummyDataListenerSignals.getNoDataListener().get() > 0) {
             nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(safeParseInteger(no_dummy_nfload));
             ueMobilities = DummyDataGenerator.generateDummyUeMobilities(safeParseInteger(no_dummy_uemob));
             ueCommunications = DummyDataGenerator.generateDummyUeCommunications(safeParseInteger(no_dummy_uecomm));
@@ -92,15 +86,15 @@ public class KafkaDummyDataListener {
         long start;
 
         System.out.println("Started sending dummy data for events: " + event.getMessage() +
-                " , Supported Events: " + supportedEvents +
-                " , Active events:" + eventProducerStartedSending.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
+                " , Supported Events: " + dummyDataListenerSignals.getSupportedEvents() +
+                " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
 
-        while (no_kafkaDummyDataListeners.get() > 0) {
+        while (dummyDataListenerSignals.getNoDataListener().get() > 0) {
             start = System.nanoTime();
-            for (NwdafEventEnum eType : supportedEvents) {
+            for (NwdafEventEnum eType : dummyDataListenerSignals.getSupportedEvents()) {
                 switch (eType) {
                     case NF_LOAD:
-                        if (!eventProducerIsActive.get(NwdafEventEnum.NF_LOAD)) {
+                        if (!dummyDataListenerSignals.getEventProducerIsActive().get(NwdafEventEnum.NF_LOAD)) {
                             break;
                         }
 
@@ -111,17 +105,17 @@ public class KafkaDummyDataListener {
                                 if (k == 0) {
                                     logger.info("collector sent nfload with time:" + nfloadinfos.get(k).getTimeStamp());
                                 }
-                                startSending(eType);
+                                dummyDataListenerSignals.startSending(eType);
 
                             } catch (Exception e) {
                                 logger.error("Failed to send dummy nfloadlevelinfo to broker", e);
-                                stop();
+                                dummyDataListenerSignals.stop();
                                 continue;
                             }
                         }
                         break;
                     case UE_MOBILITY:
-                        if (!eventProducerIsActive.get(NwdafEventEnum.UE_MOBILITY)) {
+                        if (!dummyDataListenerSignals.getEventProducerIsActive().get(NwdafEventEnum.UE_MOBILITY)) {
                             break;
                         }
 
@@ -132,17 +126,17 @@ public class KafkaDummyDataListener {
                                     logger.info("collector sent ue_mobility with time:" + ueMobilities.get(k).getTs());
                                 }
                                 producer.sendMessage(objectMapper.writeValueAsString(ueMobilities.get(k)), eType.toString());
-                                startSending(eType);
+                                dummyDataListenerSignals.startSending(eType);
 
                             } catch (Exception e) {
                                 logger.error("Failed to send dummy ueMobilities to broker", e);
-                                stop();
+                                dummyDataListenerSignals.stop();
                                 continue;
                             }
                         }
                         break;
                     case UE_COMM:
-                        if (!eventProducerIsActive.get(NwdafEventEnum.UE_COMM)) {
+                        if (!dummyDataListenerSignals.getEventProducerIsActive().get(NwdafEventEnum.UE_COMM)) {
                             break;
                         }
 
@@ -153,11 +147,11 @@ public class KafkaDummyDataListener {
                                     logger.info("collector sent ue_communication with time:" + ueCommunications.get(k).getTs());
                                 }
                                 producer.sendMessage(objectMapper.writeValueAsString(ueCommunications.get(k)), eType.toString());
-                                startSending(eType);
+                                dummyDataListenerSignals.startSending(eType);
 
                             } catch (Exception e) {
                                 logger.error("Failed to send dummy ueCommunications to broker", e);
-                                stop();
+                                dummyDataListenerSignals.stop();
                                 continue;
                             }
                         }
@@ -174,7 +168,7 @@ public class KafkaDummyDataListener {
                     Thread.sleep(wait_time - diff);
                 } catch (InterruptedException e) {
                     logger.error("Failed to wait for timeout", e);
-                    stop();
+                    dummyDataListenerSignals.stop();
                     continue;
                 }
             }
@@ -182,51 +176,5 @@ public class KafkaDummyDataListener {
         logger.info("Dummy Data Production stopped!");
     }
 
-    public static boolean start() {
-        if (no_kafkaDummyDataListeners.get() < 1) {
-            no_kafkaDummyDataListeners.incrementAndGet();
-            startTime = OffsetDateTime.now();
-            logger.info("producing dummy data to send to kafka...");
-            return true;
-        }
-        return false;
-    }
 
-    private static void stop() {
-        if (no_kafkaDummyDataListeners.get() > 0) {
-            no_kafkaDummyDataListeners.decrementAndGet();
-            endTime = OffsetDateTime.now();
-        }
-        for(NwdafEventEnum eType : supportedEvents) {
-            deactivate(eType);
-        }
-    }
-
-    public static void startSending(NwdafEventEnum eventTopic) {
-        if (!eventProducerStartedSending.get(eventTopic)) {
-            eventProducerStartedSending.compute(eventTopic, (k, v) -> true);
-            eventStartedCollectingTimes.put(eventTopic, OffsetDateTime.now());
-            eventProducerCounters.compute(eventTopic, (k, v) -> 0L);
-        }
-    }
-
-    public static void stopSending(NwdafEventEnum eventTopic) {
-        if (eventProducerStartedSending.get(eventTopic)) {
-            eventProducerStartedSending.compute(eventTopic, (k, v) -> false);
-            eventStartedCollectingTimes.put(eventTopic, OffsetDateTime.MIN);
-        }
-    }
-
-    public static void activate(NwdafEventEnum eventTopic) {
-        if (!eventProducerIsActive.get(eventTopic)) {
-            eventProducerIsActive.compute(eventTopic, (k, v) -> true);
-        }
-    }
-
-    public static void deactivate(NwdafEventEnum eventTopic) {
-        if (eventProducerIsActive.get(eventTopic)) {
-            eventProducerIsActive.compute(eventTopic, (k, v) -> false);
-            stopSending(eventTopic);
-        }
-    }
 }
