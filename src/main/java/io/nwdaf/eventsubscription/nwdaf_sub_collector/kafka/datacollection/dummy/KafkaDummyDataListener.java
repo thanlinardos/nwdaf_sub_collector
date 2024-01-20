@@ -1,10 +1,13 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dummy;
 
+import java.lang.Exception;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import io.nwdaf.eventsubscription.model.NfLoadLevelInformation;
 import io.nwdaf.eventsubscription.model.NwdafEvent;
 import io.nwdaf.eventsubscription.model.UeCommunication;
+import io.nwdaf.eventsubscription.model.UeMobility;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.DataListenerSignals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.nwdaf.eventsubscription.utilities.DummyDataGenerator;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.KafkaProducer;
-import io.nwdaf.eventsubscription.model.NfLoadLevelInformation;
 import io.nwdaf.eventsubscription.model.NwdafEvent.NwdafEventEnum;
-import io.nwdaf.eventsubscription.model.UeMobility;
 import io.nwdaf.eventsubscription.utilities.Constants;
 
 import static io.nwdaf.eventsubscription.utilities.ParserUtil.safeParseInteger;
