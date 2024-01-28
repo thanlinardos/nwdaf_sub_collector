@@ -2,6 +2,7 @@ package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.nef;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.nwdaf.eventsubscription.customModel.NefUe;
 import io.nwdaf.eventsubscription.model.NwdafEvent;
 import io.nwdaf.eventsubscription.model.UeMobility;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.KafkaProducer;
@@ -14,15 +15,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class NefDataCollectionListener {
@@ -45,6 +50,7 @@ public class NefDataCollectionListener {
     final KafkaProducer producer;
     final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(KafkaDataCollectionListener.class);
+    private static AtomicBoolean isLoopStarted = new AtomicBoolean(false);
 
     public NefDataCollectionListener(KafkaProducer producer, ObjectMapper objectMapper) {
         this.producer = producer;
@@ -98,6 +104,9 @@ public class NefDataCollectionListener {
                         List<UeMobility> ueMobilities;
                         try {
                             long t = System.nanoTime();
+                            if (!isLoopStarted.get()) {
+                                startMovementLoop(nefRequestBuilder);
+                            }
                             ueMobilities = nefRequestBuilder.execute(eType, nefUrl + nefStateUes, objectMapper);
                             nef_delay += (System.nanoTime() - t) / 1000000L;
                         } catch (JsonProcessingException e) {
@@ -148,5 +157,56 @@ public class NefDataCollectionListener {
             logger.info("data coll total delay = " + diff + "ms");
         }
         logger.info("NEF Data Collection stopped!");
+    }
+
+    private void startMovementLoop(NefRequestBuilder nefRequestBuilder) {
+        List<String> ueSupiList = getUeSupiList(nefRequestBuilder);
+        if (ueSupiList.isEmpty()) {
+            return;
+        }
+        for (String supi : ueSupiList) {
+            if (supi == null || supi.isEmpty()) {
+                continue;
+            }
+            try {
+                String body = "{\"supi\":\"" + supi + "\"}";
+                ResponseEntity<String> response = nefRequestBuilder.getTemplate().exchange(
+                        nefUrl + "ue_movement/start-loop", HttpMethod.POST,
+                        nefRequestBuilder.setupRequest(token, body), String.class);
+                if (response.getBody() != null && response.getBody().contains("Loop started")) {
+                    logger.info("Started movement loop for supi: " + supi);
+                }
+            } catch (RestClientException e) {
+                logger.error("Failed to connect to nef 'startMovementLoop'", e);
+            } catch (Exception e) {
+                logger.error("Failed to startMovementLoop", e);
+            }
+        }
+        isLoopStarted.set(true);
+    }
+
+    private List<String> getUeSupiList(NefRequestBuilder nefRequestBuilder) {
+        List<String> ueSupiList = new ArrayList<>();
+        try {
+            String result = nefRequestBuilder.getTemplate().exchange(
+                    nefUrl + "UEs", HttpMethod.GET,
+                    nefRequestBuilder.setupRequest(token), String.class).getBody();
+
+            List<?> ueList = objectMapper.reader().readValue(result, List.class);
+            ueSupiList.addAll(
+                    ueList.stream()
+                            .map(ue -> objectMapper.convertValue(ue, NefUe.class))
+                            .filter(nefUe -> nefUe != null && nefUe.getSupi() != null)
+                            .map(NefUe::getSupi)
+                            .toList()
+            );
+        } catch (IOException e) {
+            logger.error("Failed to parse nef 'getUeSupiList' response", e);
+        } catch (RestClientException e) {
+            logger.error("Failed to connect to nef 'getUeSupiList'", e);
+        } catch (Exception e) {
+            logger.error("Failed to get ueSupiList", e);
+        }
+        return ueSupiList;
     }
 }

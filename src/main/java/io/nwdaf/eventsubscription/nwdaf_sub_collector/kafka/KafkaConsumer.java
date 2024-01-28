@@ -105,7 +105,7 @@ public class KafkaConsumer {
 
         // Set the desired timestamps for the beginning and end of the range
         long endTimestamp = Instant.parse(OffsetDateTime.now().toString()).toEpochMilli();
-        long startTimestamp = Instant.parse(OffsetDateTime.now().minusNanos(110_000_000).toString()).toEpochMilli();
+        long startTimestamp = Instant.parse(OffsetDateTime.now().minusNanos(500_000_000).toString()).toEpochMilli();
 
         // Seek to the beginning timestamp
         for (org.apache.kafka.common.TopicPartition partition : topicPartitions) {
@@ -116,7 +116,7 @@ public class KafkaConsumer {
         }
 
         // consume messages inside the desired range
-        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(100));
+        ConsumerRecords<String, String> records = kafkaConsumer.poll(Duration.ofMillis(1));
 
         // Process the received messages here
         records.forEach(record -> {
@@ -133,26 +133,23 @@ public class KafkaConsumer {
 
     @Scheduled(fixedDelay = 1)
     private void handleWakeUp() {
-        WakeUpMessage wakeUpMessage;
-        int max_bean_wait_time = 100;
+        if(wakeUpMessageQueue.isEmpty()) {
+            return;
+        }
         List<WakeUpMessage> wakeUpMessages = new ArrayList<>();
 
         while (!wakeUpMessageQueue.isEmpty()) {
 
-            wakeUpMessage = null;
-
             try {
-                wakeUpMessage = objectMapper.reader().readValue(wakeUpMessageQueue.poll(), WakeUpMessage.class);
+                WakeUpMessage wakeUpMessage = objectMapper.reader().readValue(wakeUpMessageQueue.poll(), WakeUpMessage.class);
+                if (wakeUpMessage != null && wakeUpMessage.getRequestedEvent() != null && !wakeUpMessages.contains(wakeUpMessage)) {
+                    wakeUpMessages.add(wakeUpMessage);
+                }
             } catch (IOException e) {
                 System.out.println("IOException while converting WAKE_UP message String to WakeUpMessage object");
             }
-            if (wakeUpMessage == null || wakeUpMessage.getRequestedEvent() == null) {
-                continue;
-            }
-            wakeUpMessages.add(wakeUpMessage);
         }
 
-        wakeUpMessages = new ArrayList<>(new LinkedHashSet<>(wakeUpMessages));  // remove duplicates
         for (WakeUpMessage msg : wakeUpMessages) {
             NwdafEvent.NwdafEventEnum event = msg.getRequestedEvent();
 
@@ -163,20 +160,21 @@ public class KafkaConsumer {
                     .build();
 
             startedReceiving(event);
+            double maxWait = 2000.0;
 
             if (allowDummyData && dummyDataListenerSignals.getSupportedEvents().contains(event)) {
                 kafkaDummyDataPublisher.publishDataCollection(List.of(event));
-                activateDataListener(msg, event, max_bean_wait_time, response, dummyDataListenerSignals, "DUMMY");
+                activateDataListener(msg, event, maxWait, response, dummyDataListenerSignals, "DUMMY");
             }
 
             if (allowPrometheusData && dataListenerSignals.getSupportedEvents().contains(event)) {
                 kafkaDataCollectionPublisher.publishDataCollection(List.of(event));
-                activateDataListener(msg, event, max_bean_wait_time, response, dataListenerSignals, "PROMETHEUS");
+                activateDataListener(msg, event, maxWait, response, dataListenerSignals, "PROMETHEUS");
             }
 
             if (allowNefData && nefDataListenerSignals.getSupportedEvents().contains(event)) {
                 nefDataCollectionPublisher.publishDataCollection(List.of(event));
-                activateDataListener(msg, event, max_bean_wait_time, response, nefDataListenerSignals, "NEF");
+                activateDataListener(msg, event, maxWait, response, nefDataListenerSignals, "NEF");
             }
 
             try {
@@ -188,8 +186,8 @@ public class KafkaConsumer {
         }
     }
 
-    private static void activateDataListener(WakeUpMessage msg, NwdafEvent.NwdafEventEnum event, int max_bean_wait_time, DiscoverMessage response, DataListenerSignals dataListenerSignals, String collectorType) {
-        double maxWait = 1000.0;
+    private static void activateDataListener(WakeUpMessage msg, NwdafEvent.NwdafEventEnum event, double maxWait, DiscoverMessage response, DataListenerSignals dataListenerSignals, String collectorType) {
+        int max_bean_wait_time = 100;
         double waitTime = 0.0;
         long listenerAvailableOffset = 0;
         long availableOffset = 0;
