@@ -192,7 +192,7 @@ public class KafkaConsumer {
         long listenerAvailableOffset = 0;
         long availableOffset = 0;
         boolean hasData = false;
-        int expectedWaitTime = 0;
+        long expectedWaitTime = 0;
         if (!dataListenerSignals.getEventStartedCollectingTimes().get(event).equals(OffsetDateTime.MIN)) {
             listenerAvailableOffset = (Instant.now().toEpochMilli() - dataListenerSignals.getEventStartedCollectingTimes().get(event).toInstant().toEpochMilli()) / 1000;
         }
@@ -232,12 +232,12 @@ public class KafkaConsumer {
                 availableOffset = listenerAvailableOffset;
                 hasData = true;
             } else {
-                expectedWaitTime = (int) (msg.getRequestedOffset() - listenerAvailableOffset);
+                expectedWaitTime = msg.getRequestedOffset() - listenerAvailableOffset;
             }
         }
 
         response.setHasData(hasData);
-        response.setAvailableOffset((int) availableOffset);
+        response.setAvailableOffset(availableOffset);
         response.setExpectedWaitTime(expectedWaitTime);
     }
 
