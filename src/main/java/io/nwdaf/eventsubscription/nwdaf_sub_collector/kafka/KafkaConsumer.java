@@ -6,13 +6,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.nwdaf.eventsubscription.customModel.KafkaTopic;
 import io.nwdaf.eventsubscription.model.NwdafEvent;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.DataListenerSignals;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.nef.NefDataCollectionPublisher;
@@ -78,14 +78,15 @@ public class KafkaConsumer {
 
     @Scheduled(fixedDelay = 1)
     private void wakeUpListener() {
-        List<PartitionInfo> partitions = kafkaConsumer.partitionsFor("WAKE_UP");
+        String topic = KafkaTopic.WAKE_UP.name();
+        List<PartitionInfo> partitions = kafkaConsumer.partitionsFor(topic);
 
         // Get the beginning offset for each partition and convert it to a timestamp
         long earliestTimestamp = Long.MAX_VALUE;
         List<TopicPartition> topicPartitions = new ArrayList<>();
         for (PartitionInfo partition : partitions) {
 
-            TopicPartition topicPartition = new TopicPartition("WAKE_UP", partition.partition());
+            TopicPartition topicPartition = new TopicPartition(topic, partition.partition());
             topicPartitions.add(topicPartition);
             kafkaConsumer.assign(Collections.singletonList(topicPartition));
             kafkaConsumer.seekToBeginning(Collections.singletonList(topicPartition));
@@ -178,7 +179,7 @@ public class KafkaConsumer {
             }
 
             try {
-                kafkaProducer.sendMessage(response.toString(), "DISCOVER");
+                kafkaProducer.sendMessage(response.toString(), KafkaTopic.DISCOVER.name());
                 startedProducing(event);
             } catch (IOException e) {
                 System.out.println("IOException while sending DISCOVER message");

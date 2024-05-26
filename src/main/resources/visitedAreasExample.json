@@ -1,0 +1,229 @@
+{
+  "supi": "imsi-1231236103024708",
+  "time": 1716477329.0876305,
+  "duration": 1,
+  "locInfos": [
+    {
+      "loc": {
+        "nrLocation": {
+          "ncgi": {
+            "nid": null,
+            "plmnId": {
+              "mcc": "202",
+              "mnc": "1"
+            },
+            "nrCellId": "AAAAA1003"
+          },
+          "ignoreNcgi": false,
+          "globalGnbId": {
+            "nid": null,
+            "eNbId": null,
+            "tngfId": null,
+            "wagfId": null,
+            "n3IwfId": null,
+            "ngeNbId": "LMacroNGeNB-AAAAA1"
+          },
+          "cellLocation": {
+            "type": "EllipsoidArc",
+            "point": {
+              "lat": 37.99613571166992,
+              "lon": 23.81853485107422
+            },
+            "shape": {
+              "supportedGADShapes": "EllipsoidArc"
+            },
+            "confidence": null,
+            "innerRadius": 100,
+            "offsetAngle": 0,
+            "includedAngle": 360,
+            "uncertaintyRadius": 0.0
+          },
+          "geodeticInformation": null,
+          "ueLocationTimestamp": 1716477329.0876305,
+          "pointUncertaintyCircle": {
+            "type": "PointUncertaintyCircle",
+            "point": {
+              "lat": 37.996674,
+              "lon": 23.818665
+            },
+            "shape": {
+              "supportedGADShapes": "PointUncertaintyCircle"
+            },
+            "uncertainty": 3.310000000000004
+          },
+          "geographicalInformation": "0001111100010010111111111001001100001011111010001100101000000011",
+          "ageOfLocationInformation": null
+        },
+        "n3gaLocation": {
+          "gci": null,
+          "n3IwfId": null,
+          "portNumber": null,
+          "ueIpv4Addr": "10.0.0.1",
+          "ueIpv6Addr": "::1"
+        }
+      },
+      "ratio": null,
+      "confidence": null
+    },
+    {
+      "loc": {
+        "nrLocation": {
+          "ncgi": {
+            "nid": null,
+            "plmnId": {
+              "mcc": "202",
+              "mnc": "1"
+            },
+            "nrCellId": "AAAAA1003"
+          },
+          "ignoreNcgi": false,
+          "globalGnbId": {
+            "nid": null,
+            "eNbId": null,
+            "tngfId": null,
+            "wagfId": null,
+            "n3IwfId": null,
+            "ngeNbId": "LMacroNGeNB-AAAAA1"
+          },
+          "cellLocation": {
+            "type": "EllipsoidArc",
+            "point": {
+              "lat": 37.99613571166992,
+              "lon": 23.81853485107422
+            },
+            "shape": {
+              "supportedGADShapes": "EllipsoidArc"
+            },
+            "confidence": null,
+            "innerRadius": 100,
+            "offsetAngle": 0,
+            "includedAngle": 360,
+            "uncertaintyRadius": 0.0
+          },
+          "geodeticInformation": null,
+          "ueLocationTimestamp": 1716477328.0876305,
+          "pointUncertaintyCircle": {
+            "type": "PointUncertaintyCircle",
+            "point": {
+              "lat": 37.996948,
+              "lon": 23.818481
+            },
+            "shape": {
+              "supportedGADShapes": "PointUncertaintyCircle"
+            },
+            "uncertainty": 3.310000000000004
+          },
+          "geographicalInformation": "0001111100010010111111111001110000001011111010001100010000000011",
+          "ageOfLocationInformation": null
+        },
+        "n3gaLocation": {
+          "gci": null,
+          "n3IwfId": null,
+          "portNumber": null,
+          "ueIpv4Addr": "10.0.0.1",
+          "ueIpv6Addr": "::1"
+        }
+      },
+      "ratio": null,
+      "confidence": null
+    },
+    {
+      "loc": {
+        "nrLocation": {
+          "ncgi": {
+            "nid": null,
+            "plmnId": {
+              "mcc": "202",
+              "mnc": "1"
+            },
+            "nrCellId": "AAAAA1002"
+          },
+          "ignoreNcgi": false,
+          "globalGnbId": {
+            "nid": null,
+            "eNbId": null,
+            "tngfId": null,
+            "wagfId": null,
+            "n3IwfId": null,
+            "ngeNbId": "LMacroNGeNB-null"
+          },
+          "geodeticInformation": null,
+          "ueLocationTimestamp": 1716477327.0876305,
+          "pointUncertaintyCircle": {
+            "type": "PointUncertaintyCircle",
+            "point": {
+              "lat": 37.997345,
+              "lon": 23.818634
+            },
+            "shape": {
+              "supportedGADShapes": "PointUncertaintyCircle"
+            },
+            "uncertainty": 3.310000000000004
+          },
+          "geographicalInformation": "0001111100010010111111111010100100001011111010001100100100000011",
+          "ageOfLocationInformation": null
+        },
+        "n3gaLocation": {
+          "gci": null,
+          "n3IwfId": null,
+          "portNumber": null,
+          "ueIpv4Addr": "10.0.0.1",
+          "ueIpv6Addr": "::1"
+        }
+      },
+      "ratio": null,
+      "confidence": null
+    },
+    {
+      "loc": {
+        "nrLocation": {
+          "ncgi": {
+            "nid": null,
+            "plmnId": {
+              "mcc": "202",
+              "mnc": "1"
+            },
+            "nrCellId": "AAAAA1002"
+          },
+          "ignoreNcgi": false,
+          "globalGnbId": {
+            "nid": null,
+            "eNbId": null,
+            "tngfId": null,
+            "wagfId": null,
+            "n3IwfId": null,
+            "ngeNbId": "LMacroNGeNB-null"
+          },
+          "geodeticInformation": null,
+          "ueLocationTimestamp": 1716477326.0876305,
+          "pointUncertaintyCircle": {
+            "type": "PointUncertaintyCircle",
+            "point": {
+              "lat": 37.997589,
+              "lon": 23.818939
+            },
+            "shape": {
+              "supportedGADShapes": "PointUncertaintyCircle"
+            },
+            "uncertainty": 3.310000000000004
+          },
+          "geographicalInformation": "0001111100010010111111111011000100001011111010001101001100000011",
+          "ageOfLocationInformation": null
+        },
+        "n3gaLocation": {
+          "gci": null,
+          "n3IwfId": null,
+          "portNumber": null,
+          "ueIpv4Addr": "10.0.0.1",
+          "ueIpv6Addr": "::1"
+        }
+      },
+      "ratio": null,
+      "confidence": null
+    }
+  ],
+  "intGroupId": "97EB0E4B-123-123-FC02313659",
+  "areaOfInterestId": null,
+  "durationVariance": 0.0,
+  "areaOfInterestIds": ["b8659c57-e853-46c3-a604-cdabde57b077", "b8659c57-e853-46c3-a604-cdabde57b077", "788b8d88-226d-4254-9096-d3f1977a1bab", "788b8d88-226d-4254-9096-d3f1977a1bab"]
+}

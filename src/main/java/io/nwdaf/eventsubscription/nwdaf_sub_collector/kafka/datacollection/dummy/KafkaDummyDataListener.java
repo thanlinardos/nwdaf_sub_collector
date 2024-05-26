@@ -1,16 +1,19 @@
 package io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.dummy;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.Exception;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.Map.Entry;
 
-import io.nwdaf.eventsubscription.model.NfLoadLevelInformation;
-import io.nwdaf.eventsubscription.model.NwdafEvent;
-import io.nwdaf.eventsubscription.model.UeCommunication;
-import io.nwdaf.eventsubscription.model.UeMobility;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.nwdaf.eventsubscription.Main;
+import io.nwdaf.eventsubscription.model.*;
 import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.datacollection.DataListenerSignals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
@@ -23,17 +26,19 @@ import io.nwdaf.eventsubscription.nwdaf_sub_collector.kafka.KafkaProducer;
 import io.nwdaf.eventsubscription.model.NwdafEvent.NwdafEventEnum;
 import io.nwdaf.eventsubscription.utilities.Constants;
 
-import static io.nwdaf.eventsubscription.utilities.ParserUtil.safeParseInteger;
 
 @Component
 public class KafkaDummyDataListener {
     public static DataListenerSignals dummyDataListenerSignals = new DataListenerSignals(
-            Arrays.asList(NwdafEvent.NwdafEventEnum.NF_LOAD, NwdafEvent.NwdafEventEnum.UE_MOBILITY, NwdafEvent.NwdafEventEnum.UE_COMM),
+            Arrays.asList(NwdafEventEnum.NF_LOAD, NwdafEventEnum.UE_MOBILITY, NwdafEventEnum.UE_COMM),
             LoggerFactory.getLogger(KafkaDummyDataListener.class));
 
-    public final String no_dummy_nfload;
-    public final String no_dummy_uemob;
-    public final String no_dummy_uecomm;
+    @Value("${nnwdaf-eventsubscription.no_dummy_nfload}")
+    public Integer no_dummy_nfload;
+    @Value("${nnwdaf-eventsubscription.no_dummy_uemob}")
+    public Integer no_dummy_uemob;
+    @Value("${nnwdaf-eventsubscription.no_dummy_uecomm}")
+    public Integer no_dummy_uecomm;
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaDummyDataListener.class);
     private List<NfLoadLevelInformation> nfloadinfos;
@@ -42,6 +47,8 @@ public class KafkaDummyDataListener {
     final Environment env;
     final KafkaProducer producer;
     final ObjectMapper objectMapper;
+
+    private UeMobility locationInfoExamples;
 
     public KafkaDummyDataListener(Environment env, KafkaProducer producer, ObjectMapper objectMapper) {
 
@@ -56,9 +63,13 @@ public class KafkaDummyDataListener {
             dummyDataListenerSignals.getEventProducerCounters().put(eType, 0L);
         }
 
-        no_dummy_nfload = env.getProperty("nnwdaf-eventsubscription.no_dummy_nfload");
-        no_dummy_uemob = env.getProperty("nnwdaf-eventsubscription.no_dummy_uemob");
-        no_dummy_uecomm = env.getProperty("nnwdaf-eventsubscription.no_dummy_uecomm");
+        InputStream locInfosStream = Main.class.getResourceAsStream("/visitedAreasExample.json");
+        try {
+            locationInfoExamples = objectMapper.readValue(locInfosStream, new TypeReference<>() {
+            });
+        } catch (IOException e) {
+            logger.error("Failed to read location info examples", e);
+        }
     }
 
     @Async
@@ -69,7 +80,7 @@ public class KafkaDummyDataListener {
 
             System.out.println("Dummy Data Producer doesn't support one of the following events: " + event.getMessage() +
                     " , Supported Events: " + dummyDataListenerSignals.getSupportedEvents() +
-                    " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
+                    " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Entry::getValue).map(Entry::getKey).toList());
             return;
         }
         for (NwdafEventEnum e : event.getMessage()) {
@@ -80,15 +91,15 @@ public class KafkaDummyDataListener {
         }
 
         if (dummyDataListenerSignals.getNoDataListener().get() > 0) {
-            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(safeParseInteger(no_dummy_nfload));
-            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(safeParseInteger(no_dummy_uemob));
-            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(safeParseInteger(no_dummy_uecomm));
+            nfloadinfos = DummyDataGenerator.generateDummyNfLoadLevelInfo(no_dummy_nfload);
+            ueMobilities = DummyDataGenerator.generateDummyUeMobilities(no_dummy_uemob, locationInfoExamples);
+            ueCommunications = DummyDataGenerator.generateDummyUeCommunications(no_dummy_uecomm);
         }
         long start;
 
         System.out.println("Started sending dummy data for events: " + event.getMessage() +
                 " , Supported Events: " + dummyDataListenerSignals.getSupportedEvents() +
-                " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).toList());
+                " , Active events:" + dummyDataListenerSignals.getEventProducerStartedSending().entrySet().stream().filter(Entry::getValue).map(Entry::getKey).toList());
 
         while (dummyDataListenerSignals.getNoDataListener().get() > 0) {
             start = System.nanoTime();
@@ -120,11 +131,11 @@ public class KafkaDummyDataListener {
                             break;
                         }
 
-                        DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities);
+                        DummyDataGenerator.changeUeMobilitiesTimeDependentProperties(ueMobilities, 1);
                         for (int k = 0; k < ueMobilities.size(); k++) {
                             try {
                                 if (k == 0) {
-                                    logger.info("collector sent ue_mobility with time:" + ueMobilities.get(k).getTs());
+                                    logger.info("collector sent ue_mobility with time:{}", ueMobilities.get(k).getTs());
                                 }
                                 producer.sendMessage(objectMapper.writeValueAsString(ueMobilities.get(k)), eType.toString());
                                 dummyDataListenerSignals.startSending(eType);

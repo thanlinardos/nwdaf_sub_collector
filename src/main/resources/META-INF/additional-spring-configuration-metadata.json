@@ -3,31 +3,31 @@
     {
       "name": "nnwdaf-eventsubscription.prometheus_url",
       "type": "java.lang.String",
-      "description": "A description for 'nnwdaf-eventsubscription.prometheus_url'"
+      "description": "A description for 'nnwdaf-eventsubscription.prometheus_url'."
     },
     {
       "name": "nnwdaf-eventsubscription.allow_dummy_data",
       "type": "java.lang.String",
-      "description": "A description for 'nnwdaf-eventsubscription.allow_dummy_data'"
+      "description": "A description for 'nnwdaf-eventsubscription.allow_dummy_data'."
     },
     {
       "name": "nnwdaf-eventsubscription.allow_prom_data",
       "type": "java.lang.String",
-      "description": "A description for 'nnwdaf-eventsubscription.allow_prom_data'"
+      "description": "A description for 'nnwdaf-eventsubscription.allow_prom_data'."
     },
     {
       "name": "nnwdaf-eventsubscription.no_dummy_nfload",
-      "type": "java.lang.String",
+      "type": "java.lang.Integer",
       "description": "Description for nnwdaf-eventsubscription.no_dummy_nfload."
     },
     {
       "name": "nnwdaf-eventsubscription.no_dummy_uemob",
-      "type": "java.lang.String",
+      "type": "java.lang.Integer",
       "description": "Description for nnwdaf-eventsubscription.no_dummy_uemob."
     },
     {
       "name": "nnwdaf-eventsubscription.no_dummy_uecomm",
-      "type": "java.lang.String",
+      "type": "java.lang.Integer",
       "description": "Description for nnwdaf-eventsubscription.no_dummy_uecomm."
     },
     {
@@ -46,11 +46,6 @@
       "description": "Description for nnwdaf-eventsubscription.nef_url."
     },
     {
-      "name": "nnwdaf-eventsubscription.nef_token",
-      "type": "java.lang.String",
-      "description": "Description for nnwdaf-eventsubscription.nef_token."
-    },
-    {
       "name": "nnwdaf-eventsubscription.allow_nef_data",
       "type": "java.lang.String",
       "description": "Description for nnwdaf-eventsubscription.allow_nef_data."
@@ -64,5 +59,16 @@
       "name": "DEBUG_PORT",
       "type": "java.lang.String",
       "description": "Description for DEBUG_PORT."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.nef_group_id",
+      "type": "java.lang.String",
+      "description": "Description for nnwdaf-eventsubscription.nef_group_id."
+    },
+    {
+      "name": "nnwdaf-eventsubscription.selected_scenario",
+      "type": "java.lang.Integer",
+      "description": "Description for nnwdaf-eventsubscription.selected_scenario."
     }
-  ]}
+  ]
+}

@@ -28,7 +28,7 @@ import io.nwdaf.eventsubscription.requestbuilders.PrometheusRequestBuilder;
 @Component
 public class KafkaDataCollectionListener {
     public static DataListenerSignals dataListenerSignals = new DataListenerSignals(
-            Arrays.asList(NwdafEvent.NwdafEventEnum.NF_LOAD),
+            List.of(NwdafEventEnum.NF_LOAD),
             LoggerFactory.getLogger(KafkaDataCollectionListener.class));
 
     @Value(value = "${nnwdaf-eventsubscription.prometheus_url}")
@@ -90,12 +90,12 @@ public class KafkaDataCollectionListener {
                             nfloadinfos = prometheusRequestBuilder.execute(eType, prometheusUrl);
                             prom_delay += (System.nanoTime() - t) / 1000000L;
                         } catch (JsonProcessingException e) {
-                            logger.error("Failed to collect data for event: " + eType, e);
+                            logger.error("Failed to collect data for event: {}", eType, e);
                             dataListenerSignals.stop();
                             continue;
                         }
                         if (nfloadinfos == null || nfloadinfos.isEmpty()) {
-                            logger.error("Failed to collect data for event: " + eType);
+                            logger.error("Failed to collect data for event: {}", eType);
                             dataListenerSignals.stop();
                             continue;
                         } else {
@@ -103,7 +103,7 @@ public class KafkaDataCollectionListener {
                                 try {
                                     producer.sendMessage(objectMapper.writeValueAsString(nfloadinfos.get(j)), eType.toString());
                                     if (j == 0) {
-                                        logger.info("collector sent nfload with time:" + nfloadinfos.get(j).getTimeStamp());
+                                        logger.info("collector sent nfload with time:{}", nfloadinfos.get(j).getTimeStamp());
                                     }
                                     dataListenerSignals.startSending(eType);
                                 } catch (Exception e) {
